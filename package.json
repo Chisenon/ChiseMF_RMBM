@@ -7,7 +7,7 @@
     "url":"https://github.com/chisenon"
   },
   "unity" : "2019.4",
-  "description": "Allows you to select any mesh and delete parts based on a mask using NDMF",
+  "description": "Delete mesh parts using mask with NDMF",
   "unityRelease": "22f1",
   "vpmDependencies" : {
     "nadena.dev.ndmf": "^1.6.0"
