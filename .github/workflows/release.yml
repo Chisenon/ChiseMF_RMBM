@@ -1,0 +1,134 @@
+name: Build Release
+
+on: 
+  workflow_dispatch:
+  push:
+    paths:
+      - 'package.json'
+    branches:
+      - main
+      - master
+  pull_request:
+    paths:
+      - 'package.json'
+    branches:
+      - main
+      - master
+    types:
+      - closed
+
+jobs:
+
+  # Validate Repository Configuration
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      config_package: ${{ steps.config_package.outputs.configPackage }}
+    steps:
+
+    # Ensure that required repository variable has been created for the Package
+    - name: Validate Package Config
+      id: config_package
+      run: |
+          echo "configPackage=true" >> $GITHUB_OUTPUT;
+
+  # Build and release the Package
+  # If the repository is not configured properly, this job will be skipped
+  build:
+    needs: config
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    env:
+      packagePath: .
+    if: needs.config.outputs.config_package == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master')))
+    steps:
+
+      # Checkout Local Repository
+      - name: Checkout
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
+
+      # Get the Package version based on the package.json file
+      - name: Get Version
+        id: version
+        uses: zoexx/github-action-json-file-properties@b9f36ce6ee6fe2680cd3c32b2c62e22eade7e590
+        with: 
+            file_path: "${{ env.packagePath }}/package.json"
+            prop_path: "version"
+
+      # Get the Package name based on the package.json file
+      - name: Get Package Name
+        id: package_name
+        uses: zoexx/github-action-json-file-properties@b9f36ce6ee6fe2680cd3c32b2c62e22eade7e590
+        with: 
+            file_path: "${{ env.packagePath }}/package.json"
+            prop_path: "name"
+    
+      # Configure the Environment Variables needed for releasing the Package
+      - name: Set Environment Variables
+        run: |
+          echo "zipFile=${{ steps.package_name.outputs.value }}-${{ steps.version.outputs.value }}.zip" >> $GITHUB_ENV
+          echo "unityPackage=${{ steps.package_name.outputs.value }}-${{ steps.version.outputs.value }}.unitypackage" >> $GITHUB_ENV
+          echo "version=${{ steps.version.outputs.value }}" >> $GITHUB_ENV
+
+      # Check if tag already exists
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "refs/tags/${{ steps.version.outputs.value }}" >/dev/null 2>&1; then
+            echo "Tag ${{ steps.version.outputs.value }} already exists. Skipping release."
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Zip the Package for release
+      - name: Create Package Zip
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        working-directory: "${{ env.packagePath }}"
+        run: zip -r "${{ github.workspace }}/${{ env.zipFile }}" .
+      
+      # Build a list of .meta files for future use
+      - name: Track Package Meta Files
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        run: find "${{ env.packagePath }}/" -name \*.meta >> metaList
+      
+      # Make a UnityPackage version of the Package for release
+      - name: Create UnityPackage
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        uses: pCYSl5EDgo/create-unitypackage@v1.2.3
+        with:
+          package-path: ${{ env.unityPackage }}
+          include-files: metaList
+      
+      # Make a release tag of the version from the package.json file 
+      - name: Create Tag
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        id: tag_version
+        uses: rickstaa/action-create-tag@88dbf7ff6fe2405f8e8f6c6fdfd78829bc631f83
+        with:
+          tag: "${{ env.version }}"
+      
+      # Publish the Release to GitHub
+      - name: Make Release
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
+        with:
+          files: |
+            ${{ env.zipFile }}
+            ${{ env.unityPackage }}
+            ${{ env.packagePath }}/package.json
+          tag_name: ${{ env.version }}
+
+      # Trigger chisenote_vpm repository update
+      - name: Trigger VPM Update
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        run: |
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/chisenon/chisenote_vpm/dispatches \
+            -d '{"event_type":"release-updated","client_payload":{"repository":"${{ github.repository }}","version":"${{ env.version }}"}}'
