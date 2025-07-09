@@ -10,7 +10,8 @@
   "description": "Delete mesh parts using mask with NDMF",
   "unityRelease": "22f1",
   "vpmDependencies" : {
-    "nadena.dev.ndmf": "^1.6.0"
+    "nadena.dev.ndmf": "^1.6.0",
+    "com.vrchat.avatars": ">= 3.7.0"
   },
   "legacyFolders" : {
       "Assets\\!_ChiseNote\\RMBM": ""
