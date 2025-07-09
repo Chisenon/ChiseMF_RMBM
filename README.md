@@ -2,7 +2,7 @@
 
 [![Unity Version](https://img.shields.io/badge/Unity-2019.4%2B-blue.svg)](https://unity3d.com/get-unity/download)
 [![NDMF](https://img.shields.io/badge/NDMF-1.6.0%2B-green.svg)](https://github.com/bdunderscore/ndmf)
-[![Version](https://img.shields.io/badge/Version-0.0.9-orange.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.0.0-orange.svg)]()
 
 > マスクテクスチャでメッシュを削除するVRChatアバター用ツール
 
