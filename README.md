@@ -16,7 +16,7 @@
 
 **前提条件**: Unity 2019.4+, VRChat SDK3, NDMF 1.6.0+
 
-**VPM**：`https://chisenon.github.io/vpm-repos/`
+**VPM**：[https://chisenon.github.io/chisenote_vpm/](https://chisenon.github.io/chisenote_vpm/)
 
 ## 使い方
 
