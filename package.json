@@ -1,7 +1,7 @@
 {
   "name": "net.chisenon.chisemf.rmbm",
   "displayName": "ChiseMF - Mesh Delete by Mask",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": {
     "name": "Chisenon",
     "url":"https://github.com/chisenon"
@@ -13,6 +13,6 @@
     "nadena.dev.ndmf": "^1.6.0"
   },
   "legacyFolders" : {
-      "Assets\\!_ChiseNote\\RMBM": ""
+      "Assets\\ChiseNote\\ChiseMF_RMBM": ""
   }
 }
